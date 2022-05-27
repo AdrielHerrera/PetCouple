@@ -1,4 +1,5 @@
 ﻿using PetCouple.Models;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -10,9 +11,11 @@ namespace PetCouple.Clases
     {
 
         private static int UserScreen;
-        private static int usuario;        
+        private static int usuario;
+        private static string userName;
 
         public int Usuario { get => usuario; set => usuario = value; }
+        public string UserName { get => userName; set => userName = value; }
 
         public bool Ingresar(Usuarios user)
         {
@@ -23,6 +26,7 @@ namespace PetCouple.Clases
                 if (nveces != 0)
                 {
                     Usuario = db.Usuarios.Where(x => x.Usuario == user.Usuario.ToLower() && x.Contraseña == user.Contraseña.ToLower()).First().IdUsuario;
+                    UserName = db.Usuarios.Where(x => x.Usuario == user.Usuario.ToLower() && x.Contraseña == user.Contraseña.ToLower()).First().Usuario.ToUpper();
                     return true;
                 }
             }
@@ -156,14 +160,16 @@ namespace PetCouple.Clases
         public void aceptarMatc(int id) {
             using (PetCoupleContext db = new PetCoupleContext())
             {
+                Random rd = new Random();
                 var getLike = db.Likes.Where(x => x.Usuario1 == id && x.Usuario2 == Usuario).FirstOrDefault();
+                var getLugar = db.Parques.ToList();
                 if (getLike != null)
                 {
                     Interaccion match = new Interaccion();
                     match.Usuario1 = Usuario;
                     match.Usuario2 = id;
                     match.Match = true;
-                    match.IdParque = 1;
+                    match.IdParque = rd.Next(1,getLugar.Count());
 
                     db.Interaccion.Add(match);
 
