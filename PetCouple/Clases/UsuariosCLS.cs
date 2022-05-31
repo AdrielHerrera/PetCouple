@@ -36,6 +36,12 @@ namespace PetCouple.Clases
         {
             using (PetCoupleContext db = new PetCoupleContext()) {
 
+                var getUsuario = db.Usuarios.Where(x => x.Usuario == user.Usuario.ToUpper()).FirstOrDefault();
+                if (getUsuario!= null)
+                {
+                    return "El nombre de usuario ya fue regiustrado prueba con otro";
+                }
+
                 Usuarios setUsuario = new Usuarios();
                 
                 setUsuario.Usuario = user.Usuario.ToLower();
@@ -46,7 +52,7 @@ namespace PetCouple.Clases
                 setUsuario.EdadMascota = user.EdadMascota;
                 setUsuario.Sexo =  user.Sexo;
                 setUsuario.Foto = image;
-                setUsuario.Raza = user.Raza;
+                setUsuario.IdTipo = user.IdTipo;
                 setUsuario.NombreCompleto = user.NombreCompleto;
                 setUsuario.NumeroTel = user.NumeroTel;
                 setUsuario.Identficador = fileName;
@@ -57,24 +63,26 @@ namespace PetCouple.Clases
 
                     db.SaveChanges();
                     
-                    return "Todo bien";
+                    return "El Usuario Fue registrado con éxito";
                 }
-                catch (System.Exception ex)
+                catch (System.Exception)
                 {
 
-                    return "Todo Mal + " + ex.Message;
+                    return "El usuario no se pudo registrar";
                 }
             }
         }
         public byte[] getImage() {
             using (PetCoupleContext db = new PetCoupleContext())
             {
-                List<Usuarios> getUsuarios = db.Usuarios.ToList();                
-                for (int i = 0; i <= getUsuarios.Count; i++)
+                List<Usuarios> getUsuarios = db.Usuarios.ToList();         
+                var getUser = db.Usuarios.Where(x => x.IdUsuario == Usuario).First();
+                for (int i = 2; i <= getUsuarios.Count; i++)
                 {
                     if (!(getUsuarios[i].IdUsuario == Usuario))
                     {                        
                         var getLike = db.Likes.Where(x => x.Usuario1 == Usuario).ToList();
+
                         if (getLike.Count != 0)
                         {
                             try
@@ -86,19 +94,32 @@ namespace PetCouple.Clases
                             {
                                 try
                                 {
-                                        if (!(getLike[i-1].Like == "Si" || getLike[i-1].Like == "No")) return null;
+                                    if (!(getLike[i-1].Like == "Si" || getLike[i-1].Like == "No")) return null;
                                 }
                                 catch (System.Exception)
                                 {
-                                    UserScreen = getUsuarios[i].IdUsuario;
-                                    return getUsuarios[i].Foto;
+                                    try
+                                    {
+                                        if (!(getLike[i - 2].Like == "Si" || getLike[i - 2].Like == "No")) return null;
+                                    }
+                                    catch (Exception)
+                                    {
+                                        if (getUsuarios[i].IdTipo == getUser.IdTipo)
+                                        {
+                                            UserScreen = getUsuarios[i].IdUsuario;
+                                            return getUsuarios[i].Foto;
+                                        }
+                                    }
                                 }    
                             }                            
                         }
                         else
                         {
-                            UserScreen = getUsuarios[i].IdUsuario;
-                            return getUsuarios[i].Foto;
+                            if (getUsuarios[i].IdTipo == getUser.IdTipo)
+                            {
+                                UserScreen = getUsuarios[i].IdUsuario;
+                                return getUsuarios[i].Foto; 
+                            }
                         }
                     }
                 }             
@@ -162,6 +183,8 @@ namespace PetCouple.Clases
             {
                 Random rd = new Random();
                 var getLike = db.Likes.Where(x => x.Usuario1 == id && x.Usuario2 == Usuario).FirstOrDefault();
+                var getUsuario = db.Usuarios.Where(x => x.IdUsuario == id).First();
+                new CorreoCLS(getUsuario.Correo).smtpCorreo();
                 var getLugar = db.Parques.ToList();
                 if (getLike != null)
                 {
@@ -192,16 +215,16 @@ namespace PetCouple.Clases
         public List<MatchCLS> ListUsuariosMatch() {
             using (PetCoupleContext db = new PetCoupleContext()) {
                 List<MatchCLS> getListUser = new List<MatchCLS>();
-                var getMatch = db.Interaccion.Where(x => x.Usuario1 == Usuario).ToList();
+                var getMatch = db.Interaccion.Where(x => x.Usuario1 == Usuario || x.Usuario2 == Usuario).ToList();
                 
                 for (int i = 0; i <= getMatch.Count; i++)
                 {
                     try
                     {
-                        var getUsuario2 = db.Usuarios.Where(x => x.IdUsuario == getMatch[i].Usuario2).FirstOrDefault();
-                        if (getUsuario2 != null)
+                        var getUsuarios = db.Usuarios.Where(x => x.IdUsuario == getMatch[i].Usuario2 ).FirstOrDefault();
+                        if (getUsuarios != null)
                         {
-                            string nombre = getUsuario2.NombreCompleto;
+                            string nombre = getUsuarios.NombreCompleto;
                             string lugar = db.Parques.Where(x => x.IdParque == getMatch[i].IdParque).First().Lugar;
                             string url = db.Parques.Where(x => x.IdParque == getMatch[i].IdParque).First().Url;
 
@@ -234,7 +257,7 @@ namespace PetCouple.Clases
                 {
                     setUsuario.Foto = image; 
                 }
-                setUsuario.Raza = user.Raza;
+                setUsuario.IdTipo = user.IdTipo;
                 setUsuario.NombreCompleto = user.NombreCompleto;
                 setUsuario.NumeroTel = user.NumeroTel;
                 setUsuario.Identficador = fileName;
